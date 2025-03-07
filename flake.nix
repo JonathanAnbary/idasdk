@@ -1,5 +1,5 @@
 {
-  description = "Using the ida sdk with zig";
+  description = "Patch binary files with ease";
   inputs = {
     nixpkgs-stable.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -16,6 +16,7 @@
   }:
   let
     pkgs = nixpkgs.legacyPackages.x86_64-linux;
+    pkgs-stable = nixpkgs-stable.legacyPackages.x86_64-linux;
     zig = inputs.zig-overlay.packages.x86_64-linux.master;
     # zig = inputs.zig-overlay.packages.x86_64-linux."0.13.0";
     zls = inputs.zls-overlay.packages.x86_64-linux.zls.overrideAttrs (old: {
@@ -27,6 +28,13 @@
       packages = [
         zls
         zig
+        pkgs-stable.wine64
+        pkgs-stable.wineWowPackages.stable
+        (pkgs.python3.withPackages (python-pkgs: with python-pkgs; [
+        # select Python packages here
+        ipython
+        python-lsp-server
+      ]))
       ];
     };
   };
