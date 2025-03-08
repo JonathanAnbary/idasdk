@@ -79,4 +79,5 @@ pub fn build(b: *std.Build) !void {
     lib.installHeadersDirectory(idasdkpath.path(b, "include"), "", .{ .include_extensions = &.{ ".h", ".hpp" } });
     b.installArtifact(lib);
     b.addNamedLazyPath("ida", libdir.path(b, libfilename));
+    b.addNamedLazyPath("exports.def", idasdkpath.path(b, "plugins").path(b, "exports.def"));
 }
