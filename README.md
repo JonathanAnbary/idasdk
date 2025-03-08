@@ -19,13 +19,17 @@ const plugin = b.createModule(.{
     .link_libcpp = true,
 });
 
+
 for (idamod.include_dirs.items) |include_dir| {
     plugin.addIncludePath(include_dir.path);
 }
 for (idamod.c_macros.items) |macro| {
     plugin.c_macros.append(b.allocator, macro) catch @panic("OOM");
 }
-plugin.linkLibrary(idasdk.artifact(if (idasdk_ea_64_opt) "ida64" else "ida"));
+for (idamod.lib_paths.items) |lib_path| {
+    plugin.lib_paths.append(b.allocator, lib_path) catch @panic("OOM");
+}
+plugin.linkSystemLibrary(if (idasdk_ea_64_opt) "ida64" else "ida", .{});
 ```
 
 If you want to mix zig code with cpp I would suggest taking a look at [binmodify_plug](https://github.com/JonathanAnbary/binmodify_plug).
