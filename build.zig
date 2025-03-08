@@ -69,7 +69,8 @@ pub fn build(b: *std.Build) !void {
         .root_module = idamod,
     });
 
+    const libfile_path: std.Build.LazyPath = .{ .cwd_relative = libdir.path(b, "libida64.so").getPath(b) };
     lib.installHeadersDirectory(idasdkpath.path(b, "include"), "", .{ .include_extensions = &.{ ".h", ".hpp" } });
-    b.installLibFile(libdir.path(b, "libida64.so").getPath(b), "libida64.so");
+    b.installLibFile(libfile_path.getPath(b), "libida64.so");
     b.installArtifact(lib);
 }
