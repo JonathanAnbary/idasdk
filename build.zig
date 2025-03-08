@@ -38,7 +38,7 @@ pub fn build(b: *std.Build) !void {
 
     const libdir = idasdkpath.path(b, "lib").path(b, try std.fmt.allocPrint(b.allocator, "{s}_{s}_{s}", .{ arch_string, os_string, easize_string }));
 
-    const idamod = b.createModule(.{
+    const idamod = b.addModule("ida", .{
         .target = target,
         .optimize = optimize,
         .link_libc = true,
