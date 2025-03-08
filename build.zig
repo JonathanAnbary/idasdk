@@ -36,7 +36,7 @@ pub fn build(b: *std.Build) !void {
     };
     const easize_string = if (ea_64) "64" else "32";
 
-    const libdir = try std.fmt.allocPrint(b.allocator, "{s}_{s}_{s}", .{ arch_string, os_string, easize_string });
+    const libdir = idasdkpath.path(b, "lib").path(b, try std.fmt.allocPrint(b.allocator, "{s}_{s}_{s}", .{ arch_string, os_string, easize_string }));
 
     const idamod = b.addModule("ida", .{
         .target = target,
@@ -63,14 +63,15 @@ pub fn build(b: *std.Build) !void {
     if (optimize != .Debug) idamod.addCMacro("NDEBUG", "1");
 
     idamod.addIncludePath(idasdkpath.path(b, "include"));
-    const idalibname = switch (target.result.os.tag) {
-        .linux => if (ea_64) "libida64.so" else "libida.so",
-        .windows => "ida.lib",
-        .macos => if (ea_64) "libida64.dylib" else "libida.dylib",
-        else => unreachable,
-    };
+    idamod.addLibraryPath(libdir);
+    // const idalibname = switch (target.result.os.tag) {
+    //     .linux => if (ea_64) "libida64.so" else "libida.so",
+    //     .windows => "ida.lib",
+    //     .macos => if (ea_64) "libida64.dylib" else "libida.dylib",
+    //     else => unreachable,
+    // };
 
-    b.installLibFile(idasdkpath.path(b, "lib").path(b, libdir).path(b, idalibname).getPath(b), idalibname);
+    // b.installLibFile(libdir.path(b, idalibname).getPath(b), idalibname);
 
     // const lib = b.addLibrary(.{
     //     .name = if (ea_64) "ida64" else "ida",
