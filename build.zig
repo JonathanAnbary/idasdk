@@ -69,15 +69,16 @@ pub fn build(b: *std.Build) !void {
         .macos => if (ea_64) "libida64.dylib" else "libida.dylib",
         else => unreachable,
     };
-    idamod.addObjectFile(idasdkpath.path(b, "lib").path(b, libdir).path(b, idalibname));
 
-    const lib = b.addLibrary(.{
-        .name = if (ea_64) "ida64" else "ida",
-        .linkage = if (target.result.os.tag == .windows) .static else .dynamic,
-        .root_module = idamod,
-    });
+    b.installLibFile(idasdkpath.path(b, "lib").path(b, libdir).path(b, idalibname).getPath(b), idalibname);
+
+    // const lib = b.addLibrary(.{
+    //     .name = if (ea_64) "ida64" else "ida",
+    //     .linkage = if (target.result.os.tag == .windows) .static else .dynamic,
+    //     .root_module = idamod,
+    // });
 
     // g++ -m64 --shared -Wl,--no-undefined -o ../../bin/plugins/ida_capi.so obj/x64_linux_gcc_32/ida_capi.o -L../../lib/x64_linux_gcc_32/ -lida -Wl,--build-id -Wl,--gc-sections -Wl,--warn-shared-textrel -Wl,-Map,obj/x64_linux_gcc_32/ida_capi.so.map -Wl,--version-script=../../plugins/exports.def -Wl,-rpath='$ORIGIN/..' -z origin -lrt -lpthread -lc
     // lib.addLibraryPath(idasdkpath.path(b, "lib").path(b, libdir));
-    b.installArtifact(lib);
+    // b.installArtifact(lib);
 }
