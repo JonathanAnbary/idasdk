@@ -20,7 +20,7 @@ pub fn build(b: *std.Build) !void {
         else => return error.TargetNotSupported,
     }
 
-    const idasdkpath = b.path(idasdk);
+    const idasdkpath: std.Build.LazyPath = .{ .cwd_relative = idasdk };
 
     const arch_string = switch (target.result.cpu.arch) {
         .x86 => "x86",
