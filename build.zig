@@ -20,10 +20,7 @@ pub fn build(b: *std.Build) !void {
         else => return error.TargetNotSupported,
     }
 
-    const idasdkpath = b.path(idasdk);
-
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const alloc = gpa.allocator();
+    const idasdkpath: std.Build.LazyPath = .{ .cwd_relative = idasdk };
 
     const arch_string = switch (target.result.cpu.arch) {
         .x86 => "x86",
@@ -39,9 +36,9 @@ pub fn build(b: *std.Build) !void {
     };
     const easize_string = if (ea_64) "64" else "32";
 
-    const libdir = try std.fmt.allocPrint(alloc, "{s}_{s}_{s}", .{ arch_string, os_string, easize_string });
+    const libdir = try std.fmt.allocPrint(b.allocator, "{s}_{s}_{s}", .{ arch_string, os_string, easize_string });
 
-    const lib_mod = b.addModule("ida", .{
+    const idamod = b.addModule("ida", .{
         .target = target,
         .optimize = optimize,
         .link_libc = true,
@@ -49,20 +46,28 @@ pub fn build(b: *std.Build) !void {
     });
 
     switch (target.result.os.tag) {
-        .linux => lib_mod.addCMacro("__LINUX__", "1"),
-        .windows => lib_mod.addCMacro("__NT__", "1"),
-        .macos => lib_mod.addCMacro("__MAC__", "1"),
+        .linux => idamod.addCMacro("__LINUX__", "1"),
+        .windows => idamod.addCMacro("__NT__", "1"),
+        .macos => idamod.addCMacro("__MAC__", "1"),
         else => unreachable,
     }
 
-    if (target.result.cpu.arch == .aarch64) lib_mod.addCMacro("__ARM__", "1");
+    if (target.result.cpu.arch == .aarch64) idamod.addCMacro("__ARM__", "1");
 
-    if (ea_64) lib_mod.addCMacro("__EA64__", "1");
+    if (ea_64) idamod.addCMacro("__EA64__", "1");
 
-    if (optimize != .Debug) lib_mod.addCMacro("NDEBUG", "1");
+    if (optimize != .Debug) idamod.addCMacro("NDEBUG", "1");
+
+    idamod.addIncludePath(idasdkpath.path(b, "include"));
+    idamod.addObjectFile(idasdkpath.path(b, "lib").path(b, libdir).path(b, if (ea_64) "libida64.so" else "libida.so"));
+
+    const lib = b.addLibrary(.{
+        .name = if (ea_64) "ida64" else "ida",
+        .linkage = .dynamic,
+        .root_module = idamod,
+    });
 
     // g++ -m64 --shared -Wl,--no-undefined -o ../../bin/plugins/ida_capi.so obj/x64_linux_gcc_32/ida_capi.o -L../../lib/x64_linux_gcc_32/ -lida -Wl,--build-id -Wl,--gc-sections -Wl,--warn-shared-textrel -Wl,-Map,obj/x64_linux_gcc_32/ida_capi.so.map -Wl,--version-script=../../plugins/exports.def -Wl,-rpath='$ORIGIN/..' -z origin -lrt -lpthread -lc
-    lib_mod.addIncludePath(idasdkpath.path(b, "include"));
-    lib_mod.addLibraryPath(idasdkpath.path(b, "lib").path(b, libdir));
-    lib_mod.linkSystemLibrary(if (ea_64) "ida64" else "ida", .{});
+    // lib.addLibraryPath(idasdkpath.path(b, "lib").path(b, libdir));
+    b.installArtifact(lib);
 }
