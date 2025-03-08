@@ -39,6 +39,7 @@ pub fn build(b: *std.Build) !void {
     const libdir = idasdkpath.path(b, "lib").path(b, try std.fmt.allocPrint(b.allocator, "{s}_{s}_{s}", .{ arch_string, os_string, easize_string }));
 
     const idamod = b.addModule("ida", .{
+        .root_source_file = b.path("src/root.zig"),
         .target = target,
         .optimize = optimize,
         .link_libc = true,
@@ -75,8 +76,6 @@ pub fn build(b: *std.Build) !void {
         .macos => "libida.dylib",
         else => unreachable,
     };
-
-    idamod.addObjectFile(libdir.path(b, truelibfilename));
 
     const lib = b.addLibrary(.{
         .name = "fake_ida",
