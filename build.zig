@@ -62,14 +62,29 @@ pub fn build(b: *std.Build) !void {
 
     if (optimize != .Debug) idamod.addCMacro("NDEBUG", "1");
 
-    idamod.addObjectFile(libdir.path(b, "libida64.so"));
+    const truelibfilename = switch (target.result.os.tag) {
+        .linux => if (ea_64) "libida64.so" else "libida.so",
+        .windows => "ida.lib",
+        .macos => if (ea_64) "libida64.dylib" else "libida.dylib",
+        else => unreachable,
+    };
+
+    const newlibfilename = switch (target.result.os.tag) {
+        .linux => "libida.so",
+        .windows => "ida.lib",
+        .macos => "libida.dylib",
+        else => unreachable,
+    };
+
+    idamod.addObjectFile(libdir.path(b, truelibfilename));
+
     const lib = b.addLibrary(.{
-        .name = "ida",
+        .name = "fake_ida",
         .linkage = if (target.result.os.tag == .windows) .static else .dynamic,
         .root_module = idamod,
     });
 
     lib.installHeadersDirectory(idasdkpath.path(b, "include"), "", .{ .include_extensions = &.{ ".h", ".hpp" } });
-    b.getInstallStep().dependOn(&b.addInstallLibFile(libdir.path(b, "libida64.so"), "libida64.so").step);
+    b.getInstallStep().dependOn(&b.addInstallLibFile(libdir.path(b, truelibfilename), newlibfilename).step);
     b.installArtifact(lib);
 }
