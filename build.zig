@@ -52,8 +52,11 @@ pub fn build(b: *std.Build) !void {
         else => unreachable,
     }
 
-    if (target.result.cpu.arch == .aarch64) idamod.addCMacro("__ARM__", "1");
-
+    switch (target.result.cpu.arch) {
+        .x86 => idamod.addCMacro("__X86__", "1"),
+        .x86_64 => idamod.addCMacro("__X64__", "1"),
+        .aarch64 => idamod.addCMacro("__ARM__", "1"),
+    }
     if (ea_64) idamod.addCMacro("__EA64__", "1");
 
     if (optimize != .Debug) idamod.addCMacro("NDEBUG", "1");
