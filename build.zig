@@ -20,7 +20,7 @@ pub fn build(b: *std.Build) !void {
         else => return error.TargetNotSupported,
     }
 
-    const idasdkpath: std.Build.LazyPath = .{ .cwd_relative = idasdk };
+    const idasdkpath = b.path(idasdk);
 
     const arch_string = switch (target.result.cpu.arch) {
         .x86 => "x86",
@@ -56,17 +56,24 @@ pub fn build(b: *std.Build) !void {
         .x86 => idamod.addCMacro("__X86__", "1"),
         .x86_64 => idamod.addCMacro("__X64__", "1"),
         .aarch64 => idamod.addCMacro("__ARM__", "1"),
+        else => unreachable,
     }
     if (ea_64) idamod.addCMacro("__EA64__", "1");
 
     if (optimize != .Debug) idamod.addCMacro("NDEBUG", "1");
 
     idamod.addIncludePath(idasdkpath.path(b, "include"));
-    idamod.addObjectFile(idasdkpath.path(b, "lib").path(b, libdir).path(b, if (ea_64) "libida64.so" else "libida.so"));
+    const idalibname = switch (target.result.os.tag) {
+        .linux => if (ea_64) "libida64.so" else "libida.so",
+        .windows => "ida.lib",
+        .macos => if (ea_64) "libida64.dylib" else "libida.dylib",
+        else => unreachable,
+    };
+    idamod.addObjectFile(idasdkpath.path(b, "lib").path(b, libdir).path(b, idalibname));
 
     const lib = b.addLibrary(.{
         .name = if (ea_64) "ida64" else "ida",
-        .linkage = .dynamic,
+        .linkage = if (target.result.os.tag == .windows) .static else .dynamic,
         .root_module = idamod,
     });
 
